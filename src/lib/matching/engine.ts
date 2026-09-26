@@ -2,6 +2,7 @@ import { calculateDistance } from '../distance/haversine';
 
 export interface Resource {
   id: string;
+  provider_id?: string;
   resource_type: string;
   quantity: number;
   latitude: number;

@@ -6,13 +6,17 @@ export default async function FarmerDashboard() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Fetch pending/confirmed requests in the future. For now, empty array since we don't have a requests table.
-  const activeRequests = 0;
-  const confirmedMatches = 0;
+  const { data: requests } = await supabase
+    .from('requests')
+    .select('*, resources(*)')
+    .eq('farmer_id', user?.id)
+
+  const activeRequests = requests?.filter(r => r.status === 'pending') || []
+  const confirmedMatches = requests?.filter(r => r.status === 'accepted') || []
 
   const STATS = {
-    activeRequests,
-    confirmedMatches,
+    activeRequests: activeRequests.length,
+    confirmedMatches: confirmedMatches.length,
     totalReceived: '0 tonnes',
     carbonSaved: '0 kg'
   }
@@ -83,7 +87,19 @@ export default async function FarmerDashboard() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Your Recent Requests</h2>
           <div className="space-y-4">
-            <p className="text-sm text-gray-500">No active requests yet.</p>
+            {activeRequests.length > 0 ? activeRequests.map((req: any) => (
+              <div key={req.id} className="border border-gray-100 rounded-lg p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full font-medium">Pending</span>
+                    <p className="font-semibold text-gray-900">{req.resources?.title || 'Resource'}</p>
+                  </div>
+                  <p className="text-sm text-gray-600">Waiting for provider approval</p>
+                </div>
+              </div>
+            )) : (
+              <p className="text-sm text-gray-500">No active requests yet.</p>
+            )}
           </div>
         </div>
 
@@ -91,7 +107,22 @@ export default async function FarmerDashboard() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Confirmed Matches (Ready for Pickup)</h2>
           <div className="space-y-4">
-            <p className="text-sm text-gray-500">No confirmed matches yet.</p>
+            {confirmedMatches.length > 0 ? confirmedMatches.map((req: any) => (
+              <div key={req.id} className="border border-emerald-100 bg-emerald-50 rounded-lg p-4 flex justify-between items-center">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="bg-emerald-200 text-emerald-900 text-xs px-2 py-1 rounded-full font-bold">Confirmed</span>
+                    <p className="font-semibold text-gray-900">{req.resources?.title || 'Resource'}</p>
+                  </div>
+                  <p className="text-sm text-gray-700">Ready for pickup!</p>
+                </div>
+                <button className="flex items-center justify-center p-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700" title="View on Map">
+                  <Map className="w-5 h-5" />
+                </button>
+              </div>
+            )) : (
+              <p className="text-sm text-gray-500">No confirmed matches yet.</p>
+            )}
           </div>
         </div>
       </div>

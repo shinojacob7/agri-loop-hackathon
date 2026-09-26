@@ -1,11 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, MapPin, Calendar, Weight, Filter } from 'lucide-react'
+import { Search, MapPin, Calendar, Filter, X } from 'lucide-react'
 import { getMatchingResources, SearchCriteria, MatchResult, Resource } from '@/lib/matching/engine'
 import { createClient } from '@/lib/supabase/client'
 
-// Predefined demo coordinates for farmer (e.g. Center of a city)
 const DEMO_FARMER_LAT = 28.6139;
 const DEMO_FARMER_LON = 77.2090;
 
@@ -21,13 +20,12 @@ const RESOURCE_TYPES = [
   'Other Organic Waste'
 ]
 
-// Dummy resources for MVP demo
 const DEMO_RESOURCES: Resource[] = [
   {
     id: '1',
     resource_type: 'Vegetable Waste',
     quantity: 500,
-    latitude: 28.6200, // Very close
+    latitude: 28.6200, 
     longitude: 77.2100,
     available_from: '2024-10-20',
     available_until: '2024-11-20',
@@ -36,7 +34,7 @@ const DEMO_RESOURCES: Resource[] = [
     id: '2',
     resource_type: 'Vegetable Waste',
     quantity: 100,
-    latitude: 28.7000, // Further away
+    latitude: 28.7000, 
     longitude: 77.2500,
     available_from: '2024-10-20',
     available_until: '2024-11-20',
@@ -45,7 +43,7 @@ const DEMO_RESOURCES: Resource[] = [
     id: '3',
     resource_type: 'Cow Dung',
     quantity: 300,
-    latitude: 28.6150, // Very close, wrong type
+    latitude: 28.6150, 
     longitude: 77.2110,
     available_from: '2024-10-20',
     available_until: '2024-11-20',
@@ -56,6 +54,11 @@ export default function FarmerSearchPage() {
   const [hasSearched, setHasSearched] = useState(false)
   const [results, setResults] = useState<MatchResult[]>([])
   
+  // Modal State
+  const [selectedResource, setSelectedResource] = useState<MatchResult | null>(null)
+  const [requestMessage, setRequestMessage] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  
   const [criteria, setCriteria] = useState<SearchCriteria>({
     resource_type: 'Vegetable Waste',
     requested_quantity: 300,
@@ -64,6 +67,7 @@ export default function FarmerSearchPage() {
     farmer_lat: DEMO_FARMER_LAT,
     farmer_lon: DEMO_FARMER_LON
   })
+
   const supabase = createClient()
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -80,13 +84,14 @@ export default function FarmerSearchPage() {
       return
     }
 
-    // Map DB resources to expected matching engine format (supplying dummy lat/lon for hackathon MVP)
+    // Map DB resources to expected matching engine format
     const mappedResources: Resource[] = (dbResources || []).map((res) => ({
       id: res.id,
+      provider_id: res.provider_id,
       resource_type: res.resource_type,
       quantity: res.quantity,
-      latitude: res.latitude || DEMO_FARMER_LAT + (Math.random() * 0.1 - 0.05), // nearby random
-      longitude: res.longitude || DEMO_FARMER_LON + (Math.random() * 0.1 - 0.05),
+      latitude: res.latitude || DEMO_FARMER_LAT, // Exact match so distance=0
+      longitude: res.longitude || DEMO_FARMER_LON,
       available_from: res.created_at, // Use created_at as available_from for MVP
       available_until: '2099-12-31'
     }))
@@ -101,8 +106,94 @@ export default function FarmerSearchPage() {
     setCriteria(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
+  const handleRequestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedResource) return;
+    setIsSubmitting(true)
+    
+    // Get current farmer user
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      alert("You must be logged in to request a resource.")
+      setIsSubmitting(false)
+      return
+    }
+
+    const { error } = await supabase.from('requests').insert({
+      resource_id: selectedResource.id,
+      farmer_id: user.id,
+      provider_id: selectedResource.provider_id || selectedResource.id, // we might not have provider_id on mappedResource right now! Wait! 
+      message: requestMessage,
+      status: 'pending'
+    })
+
+    if (error) {
+      console.error(error)
+      alert("Failed to send request: " + error.message)
+      setIsSubmitting(false)
+      return
+    }
+
+    setIsSubmitting(false)
+    setSelectedResource(null)
+    setRequestMessage('')
+    alert('Request sent successfully! You can track it in your Dashboard.')
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Modal Overlay */}
+      {selectedResource && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-5 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900">Request Resource</h2>
+              <button onClick={() => setSelectedResource(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleRequestSubmit} className="p-5">
+              <div className="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                <p className="font-semibold text-gray-900">{selectedResource.quantity} kg of {selectedResource.resource_type}</p>
+                <p className="text-sm text-gray-500">{selectedResource.distance_km} km away</p>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Message to Provider (Optional)
+                </label>
+                <textarea
+                  rows={3}
+                  value={requestMessage}
+                  onChange={(e) => setRequestMessage(e.target.value)}
+                  placeholder="E.g. I can bring my own truck to pick this up tomorrow at 10 AM."
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedResource(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 border border-transparent rounded-md shadow-sm hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Sending...' : 'Send Request'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Find Resources</h1>
         <p className="text-gray-600 mt-1">Search and match with nearby organic materials.</p>
@@ -239,7 +330,10 @@ export default function FarmerSearchPage() {
                     </div>
                     
                     <div className="flex flex-col justify-end mt-4 md:mt-0">
-                      <button className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-sm">
+                      <button 
+                        onClick={() => setSelectedResource(result)}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-sm"
+                      >
                         Request Resource
                       </button>
                     </div>

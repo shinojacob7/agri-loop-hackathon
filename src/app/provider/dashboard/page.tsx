@@ -12,11 +12,18 @@ export default async function ProviderDashboard() {
     .eq('provider_id', user?.id)
     .order('created_at', { ascending: false })
 
+  const { data: requests } = await supabase
+    .from('requests')
+    .select('*, resources(*), farmer:farmer_id(full_name)')
+    .eq('provider_id', user?.id)
+    .eq('status', 'pending')
+
   const activeListings = resources?.length || 0
+  const pendingRequests = requests?.length || 0
 
   const STATS = {
     activeListings,
-    pendingRequests: 0,
+    pendingRequests,
     completedExchanges: 0,
     totalProvided: '0 tonnes'
   }
@@ -86,21 +93,23 @@ export default async function ProviderDashboard() {
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Requests</h2>
           <div className="space-y-4">
-            {/* Placeholder Request Item */}
-            <div className="border border-gray-100 rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-gray-50 transition-colors">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full font-medium">Pending</span>
-                  <p className="font-semibold text-gray-900">300 kg Vegetable Waste</p>
+            {requests && requests.length > 0 ? requests.map((req: any) => (
+              <div key={req.id} className="border border-gray-100 rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-gray-50 transition-colors">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full font-medium">Pending</span>
+                    <p className="font-semibold text-gray-900">{req.resources?.title || 'Resource'}</p>
+                  </div>
+                  <p className="text-sm text-gray-600">Requested by <span className="font-medium text-gray-900">{req.farmer?.full_name || 'A Farmer'}</span></p>
                 </div>
-                <p className="text-sm text-gray-600">Requested by <span className="font-medium text-gray-900">John Farmer</span> • 10 km away</p>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <button className="flex-1 sm:flex-none px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50">Reject</button>
+                  <button className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700">Accept</button>
+                </div>
               </div>
-              <div className="flex gap-2 w-full sm:w-auto">
-                <button className="flex-1 sm:flex-none px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50">Reject</button>
-                <button className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700">Accept</button>
-              </div>
-            </div>
-            {/* Can map more items here when hooked up to DB */}
+            )) : (
+              <p className="text-sm text-gray-500">No incoming requests right now.</p>
+            )}
           </div>
           <div className="mt-4 pt-4 border-t border-gray-100">
             <Link href="/provider/requests" className="text-emerald-600 font-medium text-sm hover:text-emerald-700">
