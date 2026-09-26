@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { MapPin, Filter } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 // Dynamically import the map to prevent SSR errors with window/document
 const MapComponent = dynamic(() => import('@/components/Map'), { 
@@ -10,49 +11,27 @@ const MapComponent = dynamic(() => import('@/components/Map'), {
   loading: () => <div className="h-full w-full bg-gray-100 animate-pulse rounded-xl flex items-center justify-center text-gray-400">Loading Map...</div>
 })
 
-// Demo Data
 const DEMO_FARMER_LAT = 9.8497;
 const DEMO_FARMER_LON = 76.9408;
 
-const DEMO_MAP_RESOURCES = [
-  {
-    id: '1',
-    resource_type: 'Vegetable Waste',
-    quantity: 500,
-    unit: 'kg',
-    latitude: 9.8486, 
-    longitude: 76.9714,
-    status: 'AVAILABLE',
-    distance_km: 1.2
-  },
-  {
-    id: '2',
-    resource_type: 'Vegetable Waste',
-    quantity: 100,
-    unit: 'kg',
-    latitude: 9.8824, 
-    longitude: 76.9610,
-    status: 'AVAILABLE',
-    distance_km: 10.5
-  },
-  {
-    id: '3',
-    resource_type: 'Cow Dung',
-    quantity: 300,
-    unit: 'kg',
-    latitude: 9.8550, 
-    longitude: 76.9550,
-    status: 'RESERVED',
-    distance_km: 0.5
-  }
-]
-
 export default function MapPage() {
   const [filter, setFilter] = useState('ALL')
+  const [resources, setResources] = useState<any[]>([])
+  const supabase = createClient()
   
+  useEffect(() => {
+    async function loadResources() {
+      const { data, error } = await supabase.from('resources').select('*')
+      if (data) {
+        setResources(data)
+      }
+    }
+    loadResources()
+  }, [])
+
   const displayedResources = filter === 'ALL' 
-    ? DEMO_MAP_RESOURCES 
-    : DEMO_MAP_RESOURCES.filter(r => r.status === filter)
+    ? resources 
+    : resources.filter(r => r.status.toUpperCase() === filter)
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
@@ -61,7 +40,7 @@ export default function MapPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <MapPin className="text-emerald-600 w-6 h-6" />
-            Resource Map
+            Live Resource Map
           </h1>
           <p className="text-sm text-gray-500">Explore available resources in your area.</p>
         </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, MapPin, Calendar, Filter, X } from 'lucide-react'
 import { getMatchingResources, SearchCriteria, MatchResult, Resource } from '@/lib/matching/engine'
 import { createClient } from '@/lib/supabase/client'
@@ -9,37 +9,8 @@ import { RESOURCE_TYPES } from '@/lib/constants'
 const DEMO_FARMER_LAT = 9.8497;
 const DEMO_FARMER_LON = 76.9408;
 
-const DEMO_RESOURCES: Resource[] = [
-  {
-    id: '1',
-    resource_type: 'Vegetable Waste',
-    quantity: 500,
-    latitude: 9.8486, 
-    longitude: 76.9714,
-    available_from: '2024-10-20',
-    available_until: '2024-11-20',
-  },
-  {
-    id: '2',
-    resource_type: 'Vegetable Waste',
-    quantity: 100,
-    latitude: 9.8824, 
-    longitude: 76.9610,
-    available_from: '2024-10-20',
-    available_until: '2024-11-20',
-  },
-  {
-    id: '3',
-    resource_type: 'Cow Dung',
-    quantity: 300,
-    latitude: 9.8550, 
-    longitude: 76.9550,
-    available_from: '2024-10-20',
-    available_until: '2024-11-20',
-  }
-]
-
 export default function FarmerSearchPage() {
+  const [dbResources, setDbResources] = useState<Resource[]>([])
   const [hasSearched, setHasSearched] = useState(false)
   const [results, setResults] = useState<MatchResult[]>([])
   
@@ -47,7 +18,18 @@ export default function FarmerSearchPage() {
   const [selectedResource, setSelectedResource] = useState<MatchResult | null>(null)
   const [requestMessage, setRequestMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const supabase = createClient()
   
+  useEffect(() => {
+    async function loadResources() {
+      const { data, error } = await supabase.from('resources').select('*').eq('status', 'available')
+      if (data) {
+        setDbResources(data)
+      }
+    }
+    loadResources()
+  }, [])
+
   const [criteria, setCriteria] = useState<SearchCriteria>({
     resource_type: 'Vegetable Waste',
     requested_quantity: 300,
@@ -57,36 +39,9 @@ export default function FarmerSearchPage() {
     farmer_lon: DEMO_FARMER_LON
   })
 
-  const supabase = createClient()
-
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // Fetch live resources from Supabase
-    const { data: dbResources, error } = await supabase
-      .from('resources')
-      .select('*')
-      .eq('status', 'available')
-
-    if (error) {
-      console.error(error)
-      return
-    }
-
-    // Map DB resources to expected matching engine format
-    const mappedResources: Resource[] = (dbResources || []).map((res) => ({
-      id: res.id,
-      provider_id: res.provider_id,
-      resource_type: res.resource_type,
-      quantity: res.quantity,
-      latitude: res.latitude || DEMO_FARMER_LAT, // Exact match so distance=0
-      longitude: res.longitude || DEMO_FARMER_LON,
-      available_from: res.created_at, // Use created_at as available_from for MVP
-      available_until: '2099-12-31'
-    }))
-
-    // Run the deterministic AgriLoop Matching Engine!
-    const matches = getMatchingResources(mappedResources, criteria)
+    const matches = getMatchingResources(dbResources, criteria)
     setResults(matches)
     setHasSearched(true)
   }
@@ -97,37 +52,41 @@ export default function FarmerSearchPage() {
 
   const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedResource) return;
     setIsSubmitting(true)
     
-    // Get current farmer user
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (!user) {
-      alert("You must be logged in to request a resource.")
-      setIsSubmitting(false)
-      return
-    }
-
-    const { error } = await supabase.from('requests').insert({
-      resource_id: selectedResource.id,
-      farmer_id: user.id,
-      provider_id: selectedResource.provider_id || selectedResource.id, // we might not have provider_id on mappedResource right now! Wait! 
-      message: requestMessage,
-      status: 'pending'
-    })
-
-    if (error) {
-      console.error(error)
-      alert("Failed to send request: " + error.message)
-      setIsSubmitting(false)
-      return
+    if (selectedResource) {
+      // Create request in Supabase
+      const { data: userData } = await supabase.auth.getUser()
+      const farmerId = userData?.user?.id
+      
+      if (farmerId) {
+        await supabase.from('requests').insert([
+          {
+            resource_id: selectedResource.id,
+            farmer_id: farmerId,
+            provider_id: selectedResource.provider_id, // Ensure this exists on resource
+            requested_quantity: criteria.requested_quantity,
+            message: requestMessage,
+            status: 'pending'
+          }
+        ])
+        
+        // Update resource status
+        await supabase.from('resources').update({ status: 'requested' }).eq('id', selectedResource.id)
+      }
     }
 
     setIsSubmitting(false)
     setSelectedResource(null)
     setRequestMessage('')
     alert('Request sent successfully! You can track it in your Dashboard.')
+    
+    // Refresh search results
+    const { data } = await supabase.from('resources').select('*').eq('status', 'available')
+    if (data) {
+      setDbResources(data)
+      setResults(getMatchingResources(data, criteria))
+    }
   }
 
   return (
@@ -303,8 +262,8 @@ export default function FarmerSearchPage() {
                   
                   <div className="flex flex-col md:flex-row gap-4 justify-between mt-2">
                     <div>
-                      <h3 className="text-xl font-bold text-gray-900">{result.quantity} kg {result.resource_type}</h3>
-                      <p className="text-gray-500 text-sm mt-1">Provider: Green Valley Canteen</p>
+                      <h3 className="text-xl font-bold text-gray-900">{result.quantity} {result.unit} {result.resource_type}</h3>
+                      <p className="text-gray-500 text-sm mt-1">Status: {result.status}</p>
                       
                       <div className="flex flex-wrap gap-3 mt-4">
                         <div className="flex items-center text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded">
