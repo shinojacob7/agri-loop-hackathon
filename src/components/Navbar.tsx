@@ -12,7 +12,13 @@ export default function Navbar() {
               AgriLoop
             </Link>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-6">
+            <Link href="/map" className="hover:text-emerald-200 font-medium transition-colors hidden sm:block">
+              Live Map
+            </Link>
+            <Link href="/impact" className="hover:text-emerald-200 font-medium transition-colors hidden sm:block">
+              Impact
+            </Link>
             <Link href="/login" className="hover:text-emerald-200 font-medium transition-colors">
               Login
             </Link>

@@ -1,11 +1,31 @@
 import Link from 'next/link'
 import { Plus, List, Bell, Star, Leaf } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
 
 export default async function ProviderDashboard() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  
+
+  async function acceptRequest(formData: FormData) {
+    'use server'
+    const requestId = formData.get('request_id') as string
+    const resourceId = formData.get('resource_id') as string
+    const supabaseServer = createClient()
+    await supabaseServer.from('requests').update({ status: 'accepted' }).eq('id', requestId)
+    await supabaseServer.from('resources').update({ status: 'matched' }).eq('id', resourceId)
+    revalidatePath('/provider/dashboard')
+    revalidatePath('/farmer/dashboard')
+  }
+
+  async function rejectRequest(formData: FormData) {
+    'use server'
+    const requestId = formData.get('request_id') as string
+    const supabaseServer = createClient()
+    await supabaseServer.from('requests').update({ status: 'rejected' }).eq('id', requestId)
+    revalidatePath('/provider/dashboard')
+  }
+
   const { data: resources } = await supabase
     .from('resources')
     .select('*')
@@ -103,8 +123,15 @@ export default async function ProviderDashboard() {
                   <p className="text-sm text-gray-600">Requested by <span className="font-medium text-gray-900">{req.farmer?.full_name || 'A Farmer'}</span></p>
                 </div>
                 <div className="flex gap-2 w-full sm:w-auto">
-                  <button className="flex-1 sm:flex-none px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50">Reject</button>
-                  <button className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700">Accept</button>
+                  <form action={rejectRequest}>
+                    <input type="hidden" name="request_id" value={req.id} />
+                    <button type="submit" className="flex-1 sm:flex-none px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50">Reject</button>
+                  </form>
+                  <form action={acceptRequest}>
+                    <input type="hidden" name="request_id" value={req.id} />
+                    <input type="hidden" name="resource_id" value={req.resource_id} />
+                    <button type="submit" className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700">Accept</button>
+                  </form>
                 </div>
               </div>
             )) : (
