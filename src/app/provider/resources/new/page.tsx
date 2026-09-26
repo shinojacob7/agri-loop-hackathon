@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Leaf, MapPin, Calendar, Weight } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 const RESOURCE_TYPES = [
   'Vegetable Waste',
@@ -39,14 +40,35 @@ export default function NewResourcePage() {
     e.preventDefault()
     setLoading(true)
     
-    // In MVP, we might simulate saving or save to Supabase here
-    console.log("Submitting:", formData)
-    
-    // Simulate API delay
-    setTimeout(() => {
-      setLoading(false)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        alert("You must be logged in to create a resource.")
+        setLoading(false)
+        return
+      }
+
+      const { error } = await supabase.from('resources').insert({
+        provider_id: user.id,
+        title: `${formData.quantity} ${formData.unit} of ${formData.resource_type}`,
+        description: formData.description,
+        quantity: Number(formData.quantity),
+        unit: formData.unit,
+        resource_type: formData.resource_type,
+        status: 'available'
+      })
+
+      if (error) throw error
+
       router.push('/provider/dashboard?success=ResourceAdded')
-    }, 1000)
+    } catch (error: any) {
+      console.error(error)
+      alert("Error saving resource: " + error.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -62,9 +84,9 @@ export default function NewResourcePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Resource Type */}
             <div className="col-span-1 md:col-span-2">
-              <label-[removed] htmlFor="resource_type" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="resource_type" className="block text-sm font-medium text-gray-700 mb-1">
                 Resource Category
-              </label-[removed]>
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Leaf className="h-5 w-5 text-gray-400" />
@@ -86,9 +108,9 @@ export default function NewResourcePage() {
 
             {/* Quantity */}
             <div>
-              <label-[removed] htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="quantity" className="block text-sm font-medium text-gray-700 mb-1">
                 Quantity
-              </label-[removed]>
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Weight className="h-5 w-5 text-gray-400" />
@@ -110,9 +132,9 @@ export default function NewResourcePage() {
 
             {/* Unit */}
             <div>
-              <label-[removed] htmlFor="unit" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="unit" className="block text-sm font-medium text-gray-700 mb-1">
                 Unit
-              </label-[removed]>
+              </label>
               <select
                 id="unit"
                 name="unit"
@@ -129,9 +151,9 @@ export default function NewResourcePage() {
 
             {/* Location */}
             <div className="col-span-1 md:col-span-2">
-              <label-[removed] htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
                 Location Name
-              </label-[removed]>
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <MapPin className="h-5 w-5 text-gray-400" />
@@ -152,9 +174,9 @@ export default function NewResourcePage() {
 
             {/* Dates */}
             <div>
-              <label-[removed] htmlFor="available_from" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="available_from" className="block text-sm font-medium text-gray-700 mb-1">
                 Available From
-              </label-[removed]>
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Calendar className="h-5 w-5 text-gray-400" />
@@ -172,9 +194,9 @@ export default function NewResourcePage() {
             </div>
 
             <div>
-              <label-[removed] htmlFor="available_until" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="available_until" className="block text-sm font-medium text-gray-700 mb-1">
                 Available Until
-              </label-[removed]>
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Calendar className="h-5 w-5 text-gray-400" />
@@ -192,9 +214,9 @@ export default function NewResourcePage() {
 
             {/* Description */}
             <div className="col-span-1 md:col-span-2">
-              <label-[removed] htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
                 Description (Optional)
-              </label-[removed]>
+              </label>
               <textarea
                 name="description"
                 id="description"

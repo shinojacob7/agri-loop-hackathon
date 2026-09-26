@@ -32,11 +32,13 @@ export default function LoginPage() {
 
       if (data.user) {
         // Fetch role to redirect appropriately
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
           .from('users')
           .select('role')
           .eq('id', data.user.id)
           .single()
+
+        console.log('Login Profile Fetch:', { profile, profileError, userId: data.user.id })
 
         if (profile?.role === 'FARMER') {
           router.push('/farmer/dashboard')

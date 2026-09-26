@@ -1,15 +1,25 @@
 import Link from 'next/link'
 import { Plus, List, Bell, Star, Leaf } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
 
-// Dummy data for MVP layout purposes
-const STATS = {
-  activeListings: 3,
-  pendingRequests: 2,
-  completedExchanges: 15,
-  totalProvided: '2.5 tonnes'
-}
+export default async function ProviderDashboard() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  const { data: resources } = await supabase
+    .from('resources')
+    .select('*')
+    .eq('provider_id', user?.id)
+    .order('created_at', { ascending: false })
 
-export default function ProviderDashboard() {
+  const activeListings = resources?.length || 0
+
+  const STATS = {
+    activeListings,
+    pendingRequests: 0,
+    completedExchanges: 0,
+    totalProvided: '0 tonnes'
+  }
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
@@ -103,20 +113,23 @@ export default function ProviderDashboard() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Your Listings</h2>
           <div className="space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b border-gray-50">
-              <div>
-                <p className="font-medium text-gray-900">500 kg Vegetable Waste</p>
-                <p className="text-sm text-gray-500">Added 2 days ago</p>
+            {resources && resources.length > 0 ? resources.slice(0, 3).map((resource: any) => (
+              <div key={resource.id} className="flex justify-between items-center pb-3 border-b border-gray-50">
+                <div>
+                  <p className="font-medium text-gray-900">{resource.title}</p>
+                  <p className="text-sm text-gray-500">
+                    Added {new Date(resource.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                  resource.status === 'available' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                }`}>
+                  {resource.status}
+                </span>
               </div>
-              <span className="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-full font-medium">Available</span>
-            </div>
-            <div className="flex justify-between items-center pb-3 border-b border-gray-50">
-              <div>
-                <p className="font-medium text-gray-900">200 kg Cow Dung</p>
-                <p className="text-sm text-gray-500">Added yesterday</p>
-              </div>
-              <span className="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full font-medium">Reserved</span>
-            </div>
+            )) : (
+              <p className="text-gray-500 text-sm">No resources listed yet.</p>
+            )}
           </div>
           <div className="mt-4">
             <Link href="/provider/resources" className="text-emerald-600 font-medium text-sm hover:text-emerald-700">

@@ -52,9 +52,12 @@ export default function RegisterPage() {
             }
           ])
 
-        // If insert fails (maybe due to trigger already creating it), that's fine for MVP
+        // If insert fails
         if (profileError && profileError.code !== '23505') { // 23505 = unique violation
           console.error('Profile creation error:', profileError)
+          setError('Failed to create profile: ' + profileError.message)
+          setLoading(false)
+          return
         }
         
         // Redirect to login or dashboard
