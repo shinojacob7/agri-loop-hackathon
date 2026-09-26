@@ -1,101 +1,67 @@
-import Image from "next/image";
+import Link from 'next/link'
+import { Leaf, Search, MapPin, Handshake, Sprout } from 'lucide-react'
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="flex flex-col items-center justify-center pt-20 px-4 text-center">
+      <div className="max-w-3xl space-y-8">
+        <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 tracking-tight">
+          Turn Organic Waste Into <span className="text-emerald-600">Agricultural Value</span>
+        </h1>
+        
+        <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          AgriLoop connects farmers looking for affordable organic resources with nearby providers who have usable biodegradable materials.
+        </p>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <Link 
+            href="/search" 
+            className="flex items-center gap-2 bg-emerald-700 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-emerald-800 transition-colors w-full sm:w-auto justify-center"
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            <Search className="w-5 h-5" />
+            Find Resources
+          </Link>
+          <Link 
+            href="/register" 
+            className="flex items-center gap-2 bg-white text-emerald-700 border-2 border-emerald-700 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-emerald-50 transition-colors w-full sm:w-auto justify-center"
           >
-            Read our docs
-          </a>
+            <Leaf className="w-5 h-5" />
+            List a Resource
+          </Link>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        {/* Workflow Section */}
+        <div className="pt-20">
+          <h2 className="text-3xl font-bold text-gray-900 mb-12">How It Works</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8">
+            <div className="flex flex-col items-center text-center space-y-3">
+              <div className="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-xl mb-2">1</div>
+              <h3 className="font-semibold text-gray-900">List</h3>
+              <p className="text-sm text-gray-500">Providers list organic materials.</p>
+            </div>
+            <div className="flex flex-col items-center text-center space-y-3">
+              <div className="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-xl mb-2">2</div>
+              <h3 className="font-semibold text-gray-900">Search</h3>
+              <p className="text-sm text-gray-500">Farmers search for needed resources.</p>
+            </div>
+            <div className="flex flex-col items-center text-center space-y-3">
+              <div className="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-xl mb-2">3</div>
+              <h3 className="font-semibold text-gray-900">Match</h3>
+              <p className="text-sm text-gray-500">AgriLoop finds the best matches.</p>
+            </div>
+            <div className="flex flex-col items-center text-center space-y-3">
+              <div className="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-xl mb-2">4</div>
+              <h3 className="font-semibold text-gray-900">Request</h3>
+              <p className="text-sm text-gray-500">Farmer sends a request.</p>
+            </div>
+            <div className="flex flex-col items-center text-center space-y-3">
+              <div className="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold text-xl mb-2">5</div>
+              <h3 className="font-semibold text-gray-900">Confirm</h3>
+              <p className="text-sm text-gray-500">Provider accepts and confirms.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-  );
+  )
 }
