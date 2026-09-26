@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Leaf, Search, MapPin, Handshake, Sprout } from 'lucide-react'
+import { Leaf, Search } from 'lucide-react'
 
 export default function Home() {
   return (
