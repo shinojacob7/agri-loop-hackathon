@@ -4,20 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Leaf, MapPin, Calendar, Weight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-
-const RESOURCE_TYPES = [
-  'Vegetable Waste',
-  'Fruit Waste',
-  'Food Waste',
-  'Crop Residue',
-  'Leaves',
-  'Cow Dung',
-  'Compost',
-  'Plant Waste',
-  'Other Organic Waste'
-]
-
-const UNITS = ['kg', 'tonnes', 'bags', 'litres']
+import { RESOURCE_TYPES, UNITS } from '@/lib/constants'
 
 export default function NewResourcePage() {
   const router = useRouter()
@@ -140,7 +127,7 @@ export default function NewResourcePage() {
                 name="unit"
                 value={formData.unit}
                 onChange={handleChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
+                className="block w-full bg-white text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
                 required
               >
                 {UNITS.map(u => (
@@ -223,7 +210,7 @@ export default function NewResourcePage() {
                 rows={3}
                 value={formData.description}
                 onChange={handleChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
+                className="block w-full bg-white text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
                 placeholder="Any special instructions for pickup, exact type of waste, etc."
               />
             </div>

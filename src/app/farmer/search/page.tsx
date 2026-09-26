@@ -4,29 +4,18 @@ import { useState } from 'react'
 import { Search, MapPin, Calendar, Filter, X } from 'lucide-react'
 import { getMatchingResources, SearchCriteria, MatchResult, Resource } from '@/lib/matching/engine'
 import { createClient } from '@/lib/supabase/client'
+import { RESOURCE_TYPES } from '@/lib/constants'
 
-const DEMO_FARMER_LAT = 28.6139;
-const DEMO_FARMER_LON = 77.2090;
-
-const RESOURCE_TYPES = [
-  'Vegetable Waste',
-  'Fruit Waste',
-  'Food Waste',
-  'Crop Residue',
-  'Leaves',
-  'Cow Dung',
-  'Compost',
-  'Plant Waste',
-  'Other Organic Waste'
-]
+const DEMO_FARMER_LAT = 9.8497;
+const DEMO_FARMER_LON = 76.9408;
 
 const DEMO_RESOURCES: Resource[] = [
   {
     id: '1',
     resource_type: 'Vegetable Waste',
     quantity: 500,
-    latitude: 28.6200, 
-    longitude: 77.2100,
+    latitude: 9.8486, 
+    longitude: 76.9714,
     available_from: '2024-10-20',
     available_until: '2024-11-20',
   },
@@ -34,8 +23,8 @@ const DEMO_RESOURCES: Resource[] = [
     id: '2',
     resource_type: 'Vegetable Waste',
     quantity: 100,
-    latitude: 28.7000, 
-    longitude: 77.2500,
+    latitude: 9.8824, 
+    longitude: 76.9610,
     available_from: '2024-10-20',
     available_until: '2024-11-20',
   },
@@ -43,8 +32,8 @@ const DEMO_RESOURCES: Resource[] = [
     id: '3',
     resource_type: 'Cow Dung',
     quantity: 300,
-    latitude: 28.6150, 
-    longitude: 77.2110,
+    latitude: 9.8550, 
+    longitude: 76.9550,
     available_from: '2024-10-20',
     available_until: '2024-11-20',
   }
@@ -169,7 +158,7 @@ export default function FarmerSearchPage() {
                   value={requestMessage}
                   onChange={(e) => setRequestMessage(e.target.value)}
                   placeholder="E.g. I can bring my own truck to pick this up tomorrow at 10 AM."
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
+                  className="block w-full bg-white text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
                 />
               </div>
 
@@ -215,7 +204,7 @@ export default function FarmerSearchPage() {
                   name="resource_type"
                   value={criteria.resource_type}
                   onChange={handleChange}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
+                  className="block w-full bg-white text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
                 >
                   {RESOURCE_TYPES.map(type => (
                     <option key={type} value={type}>{type}</option>
@@ -231,7 +220,7 @@ export default function FarmerSearchPage() {
                   value={criteria.requested_quantity}
                   onChange={handleChange}
                   min="1"
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
+                  className="block w-full bg-white text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
                 />
               </div>
 
@@ -244,7 +233,7 @@ export default function FarmerSearchPage() {
                   onChange={handleChange}
                   min="1"
                   max="500"
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
+                  className="block w-full bg-white text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
                 />
                 <div className="mt-2 flex justify-between text-xs text-gray-500">
                   <span>1 km</span>
@@ -269,7 +258,7 @@ export default function FarmerSearchPage() {
                   name="needed_by_date"
                   value={criteria.needed_by_date as string}
                   onChange={handleChange}
-                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
+                  className="block w-full bg-white text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
                 />
               </div>
 

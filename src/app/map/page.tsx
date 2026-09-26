@@ -11,8 +11,8 @@ const MapComponent = dynamic(() => import('@/components/Map'), {
 })
 
 // Demo Data
-const DEMO_FARMER_LAT = 28.6139;
-const DEMO_FARMER_LON = 77.2090;
+const DEMO_FARMER_LAT = 9.8497;
+const DEMO_FARMER_LON = 76.9408;
 
 const DEMO_MAP_RESOURCES = [
   {
@@ -20,8 +20,8 @@ const DEMO_MAP_RESOURCES = [
     resource_type: 'Vegetable Waste',
     quantity: 500,
     unit: 'kg',
-    latitude: 28.6200, 
-    longitude: 77.2100,
+    latitude: 9.8486, 
+    longitude: 76.9714,
     status: 'AVAILABLE',
     distance_km: 1.2
   },
@@ -30,8 +30,8 @@ const DEMO_MAP_RESOURCES = [
     resource_type: 'Vegetable Waste',
     quantity: 100,
     unit: 'kg',
-    latitude: 28.7000, 
-    longitude: 77.2500,
+    latitude: 9.8824, 
+    longitude: 76.9610,
     status: 'AVAILABLE',
     distance_km: 10.5
   },
@@ -40,8 +40,8 @@ const DEMO_MAP_RESOURCES = [
     resource_type: 'Cow Dung',
     quantity: 300,
     unit: 'kg',
-    latitude: 28.6150, 
-    longitude: 77.2110,
+    latitude: 9.8550, 
+    longitude: 76.9550,
     status: 'RESERVED',
     distance_km: 0.5
   }
@@ -69,7 +69,7 @@ export default function MapPage() {
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-gray-400" />
           <select 
-            className="text-sm border-gray-300 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+            className="text-sm bg-white text-gray-900 border-gray-300 rounded-md shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           >
