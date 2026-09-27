@@ -2,9 +2,21 @@ import Link from 'next/link'
 import { Search, ClipboardList, CheckCircle, Sprout, Map } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 
+import { revalidatePath } from 'next/cache'
+
 export default async function FarmerDashboard() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
+
+  async function submitRating(formData: FormData) {
+    'use server'
+    const requestId = formData.get('request_id') as string
+    const rating = parseInt(formData.get('rating') as string)
+    const supabaseServer = createClient()
+    await supabaseServer.from('requests').update({ rating }).eq('id', requestId)
+    revalidatePath('/farmer/dashboard')
+    revalidatePath('/farmer/search')
+  }
 
   const { data: requests } = await supabase
     .from('requests')
@@ -125,17 +137,41 @@ export default async function FarmerDashboard() {
           <h2 className="text-lg font-bold text-gray-900 mb-4">Confirmed Matches (Ready for Pickup)</h2>
           <div className="space-y-4">
             {confirmedMatches.length > 0 ? confirmedMatches.map((req: any) => (
-              <div key={req.id} className="border border-emerald-100 bg-emerald-50 rounded-lg p-4 flex justify-between items-center">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="bg-emerald-200 text-emerald-900 text-xs px-2 py-1 rounded-full font-bold">Confirmed</span>
-                    <p className="font-semibold text-gray-900">{req.resources?.title || 'Resource'}</p>
+              <div key={req.id} className="border border-emerald-100 bg-emerald-50 rounded-lg p-4 flex flex-col gap-3">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="bg-emerald-200 text-emerald-900 text-xs px-2 py-1 rounded-full font-bold">Confirmed</span>
+                      <p className="font-semibold text-gray-900">{req.resources?.title || 'Resource'}</p>
+                    </div>
+                    <p className="text-sm text-gray-700">Ready for pickup!</p>
                   </div>
-                  <p className="text-sm text-gray-700">Ready for pickup!</p>
+                  <button className="flex items-center justify-center p-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700" title="View on Map">
+                    <Map className="w-5 h-5" />
+                  </button>
                 </div>
-                <button className="flex items-center justify-center p-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700" title="View on Map">
-                  <Map className="w-5 h-5" />
-                </button>
+                {/* Rating System */}
+                <div className="pt-3 border-t border-emerald-200">
+                  {!req.rating ? (
+                    <form action={submitRating} className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                      <input type="hidden" name="request_id" value={req.id} />
+                      <label className="text-sm font-medium text-emerald-900">Rate Provider:</label>
+                      <select name="rating" required className="text-sm px-2 py-1 border border-emerald-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                        <option value="">Select rating...</option>
+                        <option value="5">⭐⭐⭐⭐⭐ (5) Excellent</option>
+                        <option value="4">⭐⭐⭐⭐ (4) Good</option>
+                        <option value="3">⭐⭐⭐ (3) Okay</option>
+                        <option value="2">⭐⭐ (2) Poor</option>
+                        <option value="1">⭐ (1) Bad</option>
+                      </select>
+                      <button type="submit" className="px-3 py-1 bg-emerald-600 text-white text-sm rounded-md hover:bg-emerald-700">Submit</button>
+                    </form>
+                  ) : (
+                    <p className="text-sm font-medium text-emerald-800 flex items-center gap-1">
+                      You rated this provider: {'⭐'.repeat(req.rating)} ({req.rating}/5)
+                    </p>
+                  )}
+                </div>
               </div>
             )) : (
               <p className="text-sm text-gray-500">No confirmed matches yet.</p>

@@ -3,6 +3,9 @@ import { calculateDistance } from '../distance/haversine';
 export interface Resource {
   id: string;
   provider_id?: string;
+  provider_name?: string;
+  provider_rating?: string | number | null;
+  provider_rating_count?: number;
   resource_type: string;
   quantity: number;
   latitude: number;
@@ -98,7 +101,10 @@ export function calculateMatchScore(resource: Resource, search: SearchCriteria):
 export function getMatchingResources(resources: Resource[], search: SearchCriteria): MatchResult[] {
   return resources
     .map(r => calculateMatchScore(r, search))
-    // Optionally filter out absolute garbage matches, e.g., wrong type or too far
-    .filter(r => r.distance_km <= search.max_distance_km && r.match_score >= 40)
+    // Strictly filter out resources that do not match the requested type, and those too far away
+    .filter(r => 
+      r.resource_type.toLowerCase() === search.resource_type.toLowerCase() && 
+      r.distance_km <= search.max_distance_km
+    )
     .sort((a, b) => b.match_score - a.match_score);
 }

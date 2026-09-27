@@ -22,9 +22,32 @@ export default function FarmerSearchPage() {
   
   useEffect(() => {
     async function loadResources() {
-      const { data, error } = await supabase.from('resources').select('*').eq('status', 'available')
+      // 1. Fetch available resources with their provider's name
+      const { data, error } = await supabase.from('resources').select('*, provider:users!provider_id(full_name)').eq('status', 'available')
+      
+      // 2. Fetch all ratings from requests to compute averages
+      const { data: ratingData } = await supabase.from('requests').select('provider_id, rating').not('rating', 'is', null)
+      
+      const ratingsByProvider: Record<string, { sum: number, count: number }> = {}
+      if (ratingData) {
+        ratingData.forEach((r: any) => {
+           if (!ratingsByProvider[r.provider_id]) ratingsByProvider[r.provider_id] = { sum: 0, count: 0 }
+           ratingsByProvider[r.provider_id].sum += r.rating
+           ratingsByProvider[r.provider_id].count += 1
+        })
+      }
+
       if (data) {
-        setDbResources(data)
+        const enhancedResources = data.map((res: any) => {
+          const ratingObj = ratingsByProvider[res.provider_id]
+          return {
+             ...res,
+             provider_name: res.provider?.full_name,
+             provider_rating: ratingObj ? (ratingObj.sum / ratingObj.count).toFixed(1) : null,
+             provider_rating_count: ratingObj ? ratingObj.count : 0
+          }
+        })
+        setDbResources(enhancedResources)
       }
     }
     loadResources()
@@ -263,7 +286,19 @@ export default function FarmerSearchPage() {
                   <div className="flex flex-col md:flex-row gap-4 justify-between mt-2">
                     <div>
                       <h3 className="text-xl font-bold text-gray-900">{result.quantity} {result.unit} {result.resource_type}</h3>
-                      <p className="text-gray-500 text-sm mt-1">Status: {result.status}</p>
+                      <div className="flex flex-col gap-1 mt-1">
+                        <p className="text-gray-500 text-sm">Status: {result.status}</p>
+                        {(result.provider_name || result.provider_rating) && (
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-sm font-medium text-gray-900">{result.provider_name || 'AgriLoop Provider'}</p>
+                            {result.provider_rating && (
+                              <span className="inline-flex items-center text-xs font-medium bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                                ⭐ {result.provider_rating} ({result.provider_rating_count})
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                       
                       <div className="flex flex-wrap gap-3 mt-4">
                         <div className="flex items-center text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded">

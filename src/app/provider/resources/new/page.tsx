@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Leaf, MapPin, Calendar, Weight } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -9,6 +9,7 @@ import { RESOURCE_TYPES, UNITS } from '@/lib/constants'
 export default function NewResourcePage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  
   const [formData, setFormData] = useState({
     resource_type: 'Vegetable Waste',
     quantity: '',
@@ -37,9 +38,20 @@ export default function NewResourcePage() {
         return
       }
 
-      // Hackathon demo coordinates (Cheruthoni/Karimban offset)
-      const lat = formData.location.toLowerCase().includes('karimban') ? 9.8700 : 9.8510;
-      const lon = formData.location.toLowerCase().includes('karimban') ? 76.9600 : 76.9730;
+      // Hackathon demo: Generate a deterministic fake location based on the text they typed
+      // This ensures if they type "North Farm", it's 5km away, if they type "South Farm" it's 12km away.
+      // Farmer base location is 9.8497, 76.9408
+      let hash = 0;
+      for (let i = 0; i < formData.location.length; i++) {
+        hash = formData.location.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      
+      // Generate an offset between -0.1 and +0.1 degrees (roughly up to 15km away)
+      const latOffset = ((hash % 100) / 1000) - 0.05;
+      const lonOffset = (((hash >> 2) % 100) / 1000) - 0.05;
+      
+      const lat = 9.8497 + latOffset;
+      const lon = 76.9408 + lonOffset;
 
       const { error } = await supabase.from('resources').insert({
         provider_id: user.id,

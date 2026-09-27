@@ -136,7 +136,13 @@ export default async function ProviderDashboard() {
                 <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
                   <form action={rejectRequest} className="flex flex-col gap-2 flex-1">
                     <input type="hidden" name="request_id" value={req.id} />
-                    <input type="text" name="decline_reason" placeholder="Reason (optional)" className="text-sm px-2 py-1 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500" />
+                    <input 
+                      type="text" 
+                      name="decline_reason" 
+                      placeholder="Reason for declining..." 
+                      required
+                      className="text-sm px-2 py-1 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 rounded-md focus:ring-emerald-500 focus:border-emerald-500" 
+                    />
                     <button type="submit" className="w-full px-4 py-2 border border-gray-300 text-red-700 bg-white rounded-md text-sm font-medium hover:bg-red-50">Reject</button>
                   </form>
                   <form action={acceptRequest} className="flex-1 sm:self-end">

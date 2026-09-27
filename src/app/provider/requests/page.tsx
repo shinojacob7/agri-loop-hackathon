@@ -96,8 +96,9 @@ export default async function ProviderRequestsPage() {
                       <input 
                         type="text" 
                         name="decline_reason" 
-                        placeholder="Reason for declining (optional)" 
-                        className="text-sm px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 w-full"
+                        placeholder="Reason for declining..." 
+                        required
+                        className="text-sm px-3 py-2 border border-gray-300 bg-white text-gray-900 placeholder-gray-400 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 w-full"
                       />
                       <button 
                         type="submit"
