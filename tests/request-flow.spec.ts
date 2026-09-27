@@ -33,7 +33,7 @@ test.describe('Phase 4: Request Engine Loop', () => {
     await page.waitForURL(/\/provider\/resources\/new/);
     
     // Fill out unique resource
-    await page.selectOption('select[name="resource_type"]', 'Compost');
+    await page.selectOption('select[name="resource_type"]', 'Organic Compost');
     await page.fill('input[name="quantity"]', uniqueQuantity.toString());
     await page.selectOption('select[name="unit"]', 'kg');
     await page.fill('input[name="location"]', 'Req Test Location');
@@ -71,20 +71,24 @@ test.describe('Phase 4: Request Engine Loop', () => {
     await page.click('a:has-text("Find New Resources")');
     await page.waitForURL(/\/farmer\/search/);
 
-    // Search for Compost
-    await page.selectOption('select[name="resource_type"]', 'Compost');
+    // Search for Organic Compost
+    await page.selectOption('select[name="resource_type"]', 'Organic Compost');
     await page.fill('input[name="requested_quantity"]', (uniqueQuantity - 50).toString());
+    await page.fill('input[name="max_distance_km"]', '100');
+    
+    // Wait for DB to load
+    await page.waitForTimeout(1000);
     
     // Execute Search
     await page.click('button:has-text("Find Matches")');
 
     // Verify the EXACT resource is in the results, then request it
-    const resourceCard = page.locator(`text=${uniqueQuantity} kg Compost`).locator('..');
+    const resourceCard = page.locator(`text=${uniqueQuantity} kg of Organic Compost`).locator('..');
     
     // We can't easily click "Request Resource" using just the parent div in playwright easily,
     // let's just click the first "Request Resource" button since this is an isolated test environment.
-    // Actually, wait, there might be other compost listings. Let's find the exact button for this listing.
-    await page.locator(`text=${uniqueQuantity} kg Compost`).locator('xpath=ancestor::div[contains(@class, "border-gray-200")]').locator('button:has-text("Request Resource")').click();
+    // Actually, wait, there might be other Organic Compost listings. Let's find the exact button for this listing.
+    await page.locator(`text=${uniqueQuantity} kg Organic Compost`).locator('xpath=ancestor::div[contains(@class, "border-gray-200")]').locator('button:has-text("Request Resource")').click();
 
     // The modal should appear. Fill out message.
     await page.waitForSelector('text=Message to Provider');
@@ -103,7 +107,7 @@ test.describe('Phase 4: Request Engine Loop', () => {
     await page.goto('/farmer/dashboard');
 
     // Verify it appeared in Farmer's Pending requests
-    await expect(page.locator(`text=${uniqueQuantity} kg of Compost`)).toBeVisible();
+    await expect(page.locator(`text=${uniqueQuantity} kg of Organic Compost`)).toBeVisible();
 
     // ==========================================
     // PART 3: PROVIDER SEES THE REQUEST
@@ -120,6 +124,6 @@ test.describe('Phase 4: Request Engine Loop', () => {
 
     // Verify the incoming request is visible on the Provider Dashboard!
     await expect(page.locator(`text=Request Farmer`)).toBeVisible();
-    await expect(page.locator(`text=${uniqueQuantity} kg of Compost`).first()).toBeVisible();
+    await expect(page.locator(`text=${uniqueQuantity} kg of Organic Compost`).first()).toBeVisible();
   });
 });

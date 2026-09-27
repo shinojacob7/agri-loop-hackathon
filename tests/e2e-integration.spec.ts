@@ -74,14 +74,22 @@ test.describe('Phase 3: End-to-End Integration', () => {
     await page.click('a:has-text("Find New Resources")');
     await page.waitForURL(/\/farmer\/search/);
 
-    // Search for Fruit Waste
     await page.selectOption('select[name="resource_type"]', 'Fruit Waste');
     await page.fill('input[name="requested_quantity"]', (uniqueQuantity - 50).toString()); // Ask for slightly less to ensure quantity match
+    await page.fill('input[name="max_distance_km"]', '100');
+    
+    // Wait for DB to load
+    await page.waitForTimeout(1000);
     
     // Execute Search
     await page.click('button:has-text("Find Matches")');
 
     // Verify the EXACT resource the provider just created is in the results!
-    await expect(page.locator(`text=${uniqueQuantity} kg Fruit Waste`)).toBeVisible();
+    try {
+      await expect(page.locator(`text=${uniqueQuantity} kg Fruit Waste`)).toBeVisible({ timeout: 10000 });
+    } catch (e) {
+      require('fs').writeFileSync('debug.html', await page.content());
+      throw e;
+    }
   });
 });

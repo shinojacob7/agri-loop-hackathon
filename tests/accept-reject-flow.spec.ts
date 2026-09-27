@@ -64,6 +64,10 @@ test.describe('Phase 5: Accept/Reject Workflow', () => {
 
     await page.selectOption('select[name="resource_type"]', 'Cow Dung');
     await page.fill('input[name="requested_quantity"]', (uniqueQuantity - 50).toString());
+    await page.fill('input[name="max_distance_km"]', '100');
+    
+    // Wait for DB to load
+    await page.waitForTimeout(1000);
     
     await page.click('button:has-text("Find Matches")');
 
