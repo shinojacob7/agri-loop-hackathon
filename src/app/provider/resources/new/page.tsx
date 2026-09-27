@@ -37,6 +37,10 @@ export default function NewResourcePage() {
         return
       }
 
+      // Hackathon demo coordinates (Cheruthoni/Karimban offset)
+      const lat = formData.location.toLowerCase().includes('karimban') ? 9.8700 : 9.8510;
+      const lon = formData.location.toLowerCase().includes('karimban') ? 76.9600 : 76.9730;
+
       const { error } = await supabase.from('resources').insert({
         provider_id: user.id,
         title: `${formData.quantity} ${formData.unit} of ${formData.resource_type}`,
@@ -44,7 +48,11 @@ export default function NewResourcePage() {
         quantity: Number(formData.quantity),
         unit: formData.unit,
         resource_type: formData.resource_type,
-        status: 'available'
+        status: 'available',
+        latitude: lat,
+        longitude: lon,
+        available_from: formData.available_from || new Date().toISOString().split('T')[0],
+        available_until: formData.available_until || new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0]
       })
 
       if (error) throw error
