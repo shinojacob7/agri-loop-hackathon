@@ -74,7 +74,7 @@ export default function Map({ resources, centerLat, centerLon }: MapProps) {
       </Marker>
 
       {/* Resource Locations */}
-      {resources.map((res) => (
+      {resources.filter(res => res.latitude != null && res.longitude != null).map((res) => (
         <Marker key={res.id} position={[res.latitude, res.longitude]} icon={icon}>
           <Popup>
             <div className="p-1">

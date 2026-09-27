@@ -31,7 +31,7 @@ export default function MapPage() {
 
   const displayedResources = filter === 'ALL' 
     ? resources 
-    : resources.filter(r => r.status.toUpperCase() === filter)
+    : resources.filter(r => r.status && r.status.toUpperCase() === filter)
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
