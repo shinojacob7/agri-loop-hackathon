@@ -83,7 +83,7 @@ export default function NewResourcePage() {
                   name="resource_type"
                   value={formData.resource_type}
                   onChange={handleChange}
-                  className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
+                  className="pl-10 block w-full bg-white text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
                   required
                 >
                   {RESOURCE_TYPES.map(type => (
@@ -110,7 +110,7 @@ export default function NewResourcePage() {
                   step="any"
                   value={formData.quantity}
                   onChange={handleChange}
-                  className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
+                  className="pl-10 block w-full bg-white text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
                   placeholder="e.g. 500"
                   required
                 />
@@ -151,7 +151,7 @@ export default function NewResourcePage() {
                   id="location"
                   value={formData.location}
                   onChange={handleChange}
-                  className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
+                  className="pl-10 block w-full bg-white text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
                   placeholder="e.g. Green Valley Canteen, Main St."
                   required
                 />
@@ -174,7 +174,7 @@ export default function NewResourcePage() {
                   id="available_from"
                   value={formData.available_from}
                   onChange={handleChange}
-                  className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
+                  className="pl-10 block w-full bg-white text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
                   required
                 />
               </div>
@@ -194,7 +194,7 @@ export default function NewResourcePage() {
                   id="available_until"
                   value={formData.available_until}
                   onChange={handleChange}
-                  className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
+                  className="pl-10 block w-full bg-white text-gray-900 rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border p-2.5"
                 />
               </div>
             </div>

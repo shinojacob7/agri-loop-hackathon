@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { 
   BarChart, 
   Bar, 
@@ -14,38 +15,101 @@ import {
   Legend
 } from 'recharts'
 import { Leaf, Users, Sprout, Handshake } from 'lucide-react'
-
-// Dummy data for MVP Impact statistics
-const STATS = {
-  totalListed: '4,500 kg',
-  totalReused: '3,200 kg',
-  successfulMatches: 45,
-  activeUsers: 120,
-}
-
-const CATEGORY_DATA = [
-  { name: 'Vegetable Waste', amount: 1200 },
-  { name: 'Cow Dung', amount: 800 },
-  { name: 'Crop Residue', amount: 600 },
-  { name: 'Compost', amount: 400 },
-  { name: 'Fruit Waste', amount: 200 },
-]
-
-const USER_SPLIT_DATA = [
-  { name: 'Farmers', value: 75 },
-  { name: 'Providers', value: 45 },
-]
+import { createClient } from '@/lib/supabase/client'
 
 const COLORS = ['#059669', '#10b981', '#34d399', '#6ee7b7', '#a7f3d0']
 const PIE_COLORS = ['#059669', '#f59e0b']
 
 export default function ImpactPage() {
+  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState({
+    totalListed: 0,
+    totalReused: 0,
+    successfulMatches: 0,
+    activeUsers: 0
+  })
+  
+  const [categoryData, setCategoryData] = useState<any[]>([])
+  const [userSplitData, setUserSplitData] = useState<any[]>([])
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function fetchImpactData() {
+      // 1. Fetch Users Split
+      const { data: users } = await supabase.from('users').select('role')
+      let farmerCount = 0
+      let providerCount = 0
+      if (users) {
+        users.forEach(u => {
+          if (u.role?.toUpperCase() === 'FARMER') farmerCount++
+          if (u.role?.toUpperCase() === 'PROVIDER') providerCount++
+        })
+      }
+      
+      setUserSplitData([
+        { name: 'Farmers', value: farmerCount || 1 }, // Fallback to 1 to show chart in empty DB
+        { name: 'Providers', value: providerCount || 1 }
+      ])
+      
+      // 2. Fetch Resources and Aggregate
+      const { data: resources } = await supabase.from('resources').select('quantity, status, resource_type')
+      let listed = 0
+      let reused = 0
+      const categories: Record<string, number> = {}
+
+      if (resources) {
+        resources.forEach(r => {
+          const qty = Number(r.quantity) || 0
+          listed += qty
+          
+          if (r.status === 'reserved' || r.status === 'completed' || r.status === 'matched') {
+            reused += qty
+            categories[r.resource_type] = (categories[r.resource_type] || 0) + qty
+          }
+        })
+      }
+
+      // Format category data for bar chart
+      let barData = Object.keys(categories).map(key => ({
+        name: key,
+        amount: categories[key]
+      })).sort((a, b) => b.amount - a.amount).slice(0, 5)
+
+      // Fallback data if DB is empty
+      if (barData.length === 0) {
+         barData = [
+          { name: 'Vegetable Waste', amount: 0 },
+          { name: 'Cow Dung', amount: 0 },
+        ]
+      }
+      setCategoryData(barData)
+
+      // 3. Fetch Matches (Accepted Requests)
+      const { data: requests } = await supabase.from('requests').select('id').eq('status', 'accepted')
+
+      setStats({
+        totalListed: listed,
+        totalReused: reused,
+        successfulMatches: requests?.length || 0,
+        activeUsers: users?.length || 0
+      })
+      
+      setLoading(false)
+    }
+    
+    fetchImpactData()
+  }, [])
+
+  if (loading) {
+    return <div className="p-12 text-center text-gray-500">Loading live impact data...</div>
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-10 text-center max-w-3xl mx-auto">
         <h1 className="text-4xl font-extrabold text-gray-900 mb-4">Our Environmental Impact</h1>
         <p className="text-xl text-gray-600">
-          See how the AgriLoop community is turning organic waste into valuable agricultural resources.
+          See how the AgriLoop community is turning organic waste into valuable agricultural resources in real-time.
         </p>
       </div>
 
@@ -55,7 +119,7 @@ export default function ImpactPage() {
           <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
             <Leaf className="w-7 h-7 text-emerald-600" />
           </div>
-          <p className="text-3xl font-bold text-gray-900 mb-1">{STATS.totalListed}</p>
+          <p className="text-3xl font-bold text-gray-900 mb-1">{stats.totalListed.toLocaleString()} kg</p>
           <p className="text-gray-500 font-medium">Total Material Listed</p>
         </div>
 
@@ -63,7 +127,7 @@ export default function ImpactPage() {
           <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
             <Sprout className="w-7 h-7 text-emerald-600" />
           </div>
-          <p className="text-3xl font-bold text-emerald-600 mb-1">{STATS.totalReused}</p>
+          <p className="text-3xl font-bold text-emerald-600 mb-1">{stats.totalReused.toLocaleString()} kg</p>
           <p className="text-gray-500 font-medium">Successfully Reused</p>
         </div>
 
@@ -71,7 +135,7 @@ export default function ImpactPage() {
           <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
             <Handshake className="w-7 h-7 text-emerald-600" />
           </div>
-          <p className="text-3xl font-bold text-gray-900 mb-1">{STATS.successfulMatches}</p>
+          <p className="text-3xl font-bold text-gray-900 mb-1">{stats.successfulMatches}</p>
           <p className="text-gray-500 font-medium">Matches Confirmed</p>
         </div>
 
@@ -79,7 +143,7 @@ export default function ImpactPage() {
           <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
             <Users className="w-7 h-7 text-emerald-600" />
           </div>
-          <p className="text-3xl font-bold text-gray-900 mb-1">{STATS.activeUsers}</p>
+          <p className="text-3xl font-bold text-gray-900 mb-1">{stats.activeUsers}</p>
           <p className="text-gray-500 font-medium">Active Community Members</p>
         </div>
       </div>
@@ -92,7 +156,7 @@ export default function ImpactPage() {
           <h2 className="text-xl font-bold text-gray-900 mb-6">Organic Resources Reused (kg)</h2>
           <div className="h-80 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={CATEGORY_DATA} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+              <BarChart data={categoryData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 12}} />
@@ -113,7 +177,7 @@ export default function ImpactPage() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={USER_SPLIT_DATA}
+                  data={userSplitData}
                   cx="50%"
                   cy="50%"
                   innerRadius={80}
@@ -121,7 +185,7 @@ export default function ImpactPage() {
                   paddingAngle={5}
                   dataKey="value"
                 >
-                  {USER_SPLIT_DATA.map((entry, index) => (
+                  {userSplitData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                   ))}
                 </Pie>
