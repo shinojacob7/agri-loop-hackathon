@@ -16,6 +16,9 @@ export default async function ProviderDashboard() {
     await supabaseServer.from('resources').update({ status: 'matched' }).eq('id', resourceId)
     revalidatePath('/provider/dashboard')
     revalidatePath('/farmer/dashboard')
+    revalidatePath('/provider/requests')
+    revalidatePath('/farmer/requests')
+    revalidatePath('/provider/resources')
   }
 
   async function rejectRequest(formData: FormData) {
@@ -24,6 +27,9 @@ export default async function ProviderDashboard() {
     const supabaseServer = createClient()
     await supabaseServer.from('requests').update({ status: 'rejected' }).eq('id', requestId)
     revalidatePath('/provider/dashboard')
+    revalidatePath('/farmer/dashboard')
+    revalidatePath('/provider/requests')
+    revalidatePath('/farmer/requests')
   }
 
   const { data: resources } = await supabase

@@ -1,142 +1,118 @@
-'use client'
+import { Check, X } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
+import Link from 'next/link'
 
-import { useState, useEffect } from 'react'
-import { Check, X, User } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
-
-export default function ProviderRequestsPage() {
-  const [requests, setRequests] = useState<any[]>([])
-  const [loadingId, setLoadingId] = useState<string | null>(null)
-  const [pageLoading, setPageLoading] = useState(true)
+export default async function ProviderRequestsPage() {
   const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  useEffect(() => {
-    async function fetchRequests() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data } = await supabase
-          .from('requests')
-          .select(`
-            id,
-            status,
-            requested_quantity,
-            created_at,
-            resource_id,
-            resources(resource_type, unit),
-            farmer:farmer_id(full_name)
-          `)
-          .eq('provider_id', user.id)
-          .order('created_at', { ascending: false })
-          
-        if (data) setRequests(data)
-      }
-      setPageLoading(false)
-    }
-    fetchRequests()
-  }, [])
+  const { data: requests } = await supabase
+    .from('requests')
+    .select(
+      *,
+      resources(*),
+      farmer:farmer_id(full_name)
+    )
+    .eq('provider_id', user?.id)
+    .order('created_at', { ascending: false })
 
-  const handleAccept = async (reqId: string, resourceId: string) => {
-    setLoadingId(reqId)
-    await supabase.from('requests').update({ status: 'accepted' }).eq('id', reqId)
-    await supabase.from('resources').update({ status: 'reserved' }).eq('id', resourceId)
-    
-    setRequests(prev => prev.map(r => r.id === reqId ? { ...r, status: 'accepted' } : r))
-    setLoadingId(null)
+  async function acceptRequest(formData: FormData) {
+    'use server'
+    const requestId = formData.get('request_id') as string
+    const resourceId = formData.get('resource_id') as string
+    const supabaseServer = createClient()
+    await supabaseServer.from('requests').update({ status: 'accepted' }).eq('id', requestId)
+    await supabaseServer.from('resources').update({ status: 'matched' }).eq('id', resourceId)
+    revalidatePath('/provider/requests')
+    revalidatePath('/provider/dashboard')
+    revalidatePath('/farmer/dashboard')
+    revalidatePath('/farmer/requests')
+    revalidatePath('/provider/resources')
   }
 
-  const handleReject = async (reqId: string, resourceId: string) => {
-    setLoadingId(reqId)
-    await supabase.from('requests').update({ status: 'rejected' }).eq('id', reqId)
-    await supabase.from('resources').update({ status: 'available' }).eq('id', resourceId)
-    
-    setRequests(prev => prev.map(r => r.id === reqId ? { ...r, status: 'rejected' } : r))
-    setLoadingId(null)
+  async function rejectRequest(formData: FormData) {
+    'use server'
+    const requestId = formData.get('request_id') as string
+    // When rejected, resource stays 'available'
+    const supabaseServer = createClient()
+    await supabaseServer.from('requests').update({ status: 'rejected' }).eq('id', requestId)
+    revalidatePath('/provider/requests')
+    revalidatePath('/provider/dashboard')
+    revalidatePath('/farmer/dashboard')
+    revalidatePath('/farmer/requests')
   }
-
-  if (pageLoading) return <div className="p-8 text-center text-gray-500">Loading incoming requests...</div>
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Incoming Requests</h1>
-        <p className="text-gray-600 mt-1">Review and manage requests from farmers for your resources.</p>
+    <div className=max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8>
+      <div className=mb-8>
+        <h1 className=text-3xl font-bold text-gray-900>Incoming Requests</h1>
+        <p className=text-gray-600 mt-1>Manage requests from farmers for your resources.</p>
       </div>
 
-      <div className="space-y-6">
-        {requests.length === 0 && (
-          <div className="p-8 text-center bg-gray-50 border border-dashed rounded-xl">
-            <p className="text-gray-500">No incoming requests right now.</p>
-          </div>
-        )}
-        
-        {requests.map(req => {
-          const status = req.status.toUpperCase()
-          return (
-            <div key={req.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col md:flex-row justify-between md:items-center gap-6 transition-all hover:shadow-md">
-              
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className={`px-2 py-1 text-xs font-bold rounded-full ${
-                    status === 'PENDING' ? 'bg-amber-100 text-amber-800' :
-                    status === 'ACCEPTED' ? 'bg-emerald-100 text-emerald-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {status}
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    {new Date(req.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-                
-                <h3 className="text-xl font-bold text-gray-900">
-                  {req.requested_quantity} {req.resources?.unit} of {req.resources?.resource_type}
-                </h3>
-                
-                <div className="flex items-center gap-2 mt-3 text-gray-600">
-                  <div className="bg-gray-100 p-1.5 rounded-full">
-                    <User className="w-4 h-4 text-gray-500" />
+      <div className=bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden>
+        <ul className=divide-y divide-gray-100>
+          {requests && requests.length > 0 ? requests.map((req: any) => (
+            <li key={req.id} className=p-6 hover:bg-gray-50 transition-colors>
+              <div className=flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4>
+                <div className=flex items-start gap-4>
+                  <div className=w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0>
+                    <span className=text-emerald-700 font-bold>
+                      {req.farmer?.full_name ? req.farmer.full_name.charAt(0) : 'F'}
+                    </span>
                   </div>
-                  <span className="font-medium text-gray-900">{req.farmer?.full_name || 'AgriLoop Farmer'}</span>
+                  <div>
+                    <div className=flex items-center gap-2 mb-1>
+                      <h3 className=text-lg font-bold text-gray-900>{req.farmer?.full_name || 'A Farmer'}</h3>
+                      <span className={inline-flex px-2 py-0.5 rounded text-xs font-medium border }>
+                        {req.status.toUpperCase()}
+                      </span>
+                    </div>
+                    <p className=text-gray-600 font-medium mb-1>
+                      Requested: {req.resources?.title || 'Resource'}
+                    </p>
+                    <p className=text-gray-500 text-sm mb-2>
+                      {req.message}
+                    </p>
+                    <div className=text-xs text-gray-400>
+                      {new Date(req.created_at).toLocaleDateString()} at {new Date(req.created_at).toLocaleTimeString()}
+                    </div>
+                  </div>
                 </div>
+                
+                {req.status === 'pending' && (
+                  <div className=flex items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0>
+                    <form action={rejectRequest} className=flex-1 sm:flex-none>
+                      <input type=hidden name=request_id value={req.id} />
+                      <button 
+                        type=submit
+                        className=w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors
+                      >
+                        <X className=w-4 h-4 mr-2 text-gray-400 />
+                        Decline
+                      </button>
+                    </form>
+                    <form action={acceptRequest} className=flex-1 sm:flex-none>
+                      <input type=hidden name=request_id value={req.id} />
+                      <input type=hidden name=resource_id value={req.resource_id} />
+                      <button 
+                        type=submit
+                        className=w-full inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors
+                      >
+                        <Check className=w-4 h-4 mr-2 />
+                        Accept
+                      </button>
+                    </form>
+                  </div>
+                )}
               </div>
-
-              {status === 'PENDING' && (
-                <div className="flex gap-3 w-full md:w-auto">
-                  <button 
-                    onClick={() => handleReject(req.id, req.resource_id)}
-                    disabled={loadingId === req.id}
-                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 border-2 border-red-100 text-red-700 bg-red-50 hover:bg-red-100 rounded-lg font-semibold transition-colors disabled:opacity-50"
-                  >
-                    <X className="w-4 h-4" />
-                    Reject
-                  </button>
-                  <button 
-                    onClick={() => handleAccept(req.id, req.resource_id)}
-                    disabled={loadingId === req.id}
-                    className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 text-white hover:bg-emerald-700 rounded-lg font-semibold shadow-sm transition-colors disabled:opacity-50"
-                  >
-                    <Check className="w-4 h-4" />
-                    {loadingId === req.id ? 'Processing...' : 'Accept'}
-                  </button>
-                </div>
-              )}
-              
-              {status === 'ACCEPTED' && (
-                <div className="w-full md:w-auto text-center md:text-right">
-                  <p className="text-emerald-700 font-semibold mb-1">Match Confirmed!</p>
-                  <button className="text-sm text-emerald-600 hover:underline">View Contact Details</button>
-                </div>
-              )}
-              
-              {status === 'REJECTED' && (
-                <div className="w-full md:w-auto text-center md:text-right text-gray-500 font-medium">
-                  Request Declined
-                </div>
-              )}
-              
-            </div>
-          )
-        })}
+            </li>
+          )) : (
+            <li className=p-12 text-center text-gray-500>
+              No requests found.
+            </li>
+          )}
+        </ul>
       </div>
     </div>
   )
