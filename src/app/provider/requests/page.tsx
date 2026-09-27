@@ -34,9 +34,14 @@ export default async function ProviderRequestsPage() {
   async function rejectRequest(formData: FormData) {
     'use server'
     const requestId = formData.get('request_id') as string
+    const declineReason = formData.get('decline_reason') as string
     // When rejected, resource stays 'available'
     const supabaseServer = createClient()
-    await supabaseServer.from('requests').update({ status: 'rejected' }).eq('id', requestId)
+    
+    const { data } = await supabaseServer.from('requests').select('message').eq('id', requestId).single()
+    const newMsg = (data?.message || '') + (declineReason ? `\n\n[Provider declined]: ${declineReason}` : '\n\n[Provider declined without providing a reason]')
+    
+    await supabaseServer.from('requests').update({ status: 'rejected', message: newMsg }).eq('id', requestId)
     revalidatePath('/provider/requests')
     revalidatePath('/provider/dashboard')
     revalidatePath('/farmer/dashboard')
@@ -85,23 +90,29 @@ export default async function ProviderRequestsPage() {
                 </div>
                 
                 {req.status === 'pending' && (
-                  <div className="flex items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0">
-                    <form action={rejectRequest} className="flex-1 sm:flex-none">
+                  <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto mt-4 sm:mt-0">
+                    <form action={rejectRequest} className="flex flex-col gap-2 w-full sm:w-auto">
                       <input type="hidden" name="request_id" value={req.id} />
+                      <input 
+                        type="text" 
+                        name="decline_reason" 
+                        placeholder="Reason for declining (optional)" 
+                        className="text-sm px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-emerald-500 focus:border-emerald-500 w-full"
+                      />
                       <button 
                         type="submit"
-                        className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
+                        className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
                       >
-                        <X className="w-4 h-4 mr-2 text-gray-400" />
+                        <X className="w-4 h-4 mr-2 text-red-400" />
                         Decline
                       </button>
                     </form>
-                    <form action={acceptRequest} className="flex-1 sm:flex-none">
+                    <form action={acceptRequest} className="w-full sm:w-auto sm:self-end">
                       <input type="hidden" name="request_id" value={req.id} />
                       <input type="hidden" name="resource_id" value={req.resource_id} />
                       <button 
                         type="submit"
-                        className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
+                        className="w-full h-[38px] inline-flex justify-center items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-colors"
                       >
                         <Check className="w-4 h-4 mr-2" />
                         Accept

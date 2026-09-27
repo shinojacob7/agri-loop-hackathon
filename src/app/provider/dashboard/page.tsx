@@ -24,8 +24,13 @@ export default async function ProviderDashboard() {
   async function rejectRequest(formData: FormData) {
     'use server'
     const requestId = formData.get('request_id') as string
+    const declineReason = formData.get('decline_reason') as string
+    
     const supabaseServer = createClient()
-    await supabaseServer.from('requests').update({ status: 'rejected' }).eq('id', requestId)
+    const { data } = await supabaseServer.from('requests').select('message').eq('id', requestId).single()
+    const newMsg = (data?.message || '') + (declineReason ? `\n\n[Provider declined]: ${declineReason}` : '\n\n[Provider declined without providing a reason]')
+    
+    await supabaseServer.from('requests').update({ status: 'rejected', message: newMsg }).eq('id', requestId)
     revalidatePath('/provider/dashboard')
     revalidatePath('/farmer/dashboard')
     revalidatePath('/provider/requests')
@@ -128,15 +133,16 @@ export default async function ProviderDashboard() {
                   </div>
                   <p className="text-sm text-gray-600">Requested by <span className="font-medium text-gray-900">{req.farmer?.full_name || 'A Farmer'}</span></p>
                 </div>
-                <div className="flex gap-2 w-full sm:w-auto">
-                  <form action={rejectRequest}>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                  <form action={rejectRequest} className="flex flex-col gap-2 flex-1">
                     <input type="hidden" name="request_id" value={req.id} />
-                    <button type="submit" className="flex-1 sm:flex-none px-4 py-2 border border-gray-300 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50">Reject</button>
+                    <input type="text" name="decline_reason" placeholder="Reason (optional)" className="text-sm px-2 py-1 border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500" />
+                    <button type="submit" className="w-full px-4 py-2 border border-gray-300 text-red-700 bg-white rounded-md text-sm font-medium hover:bg-red-50">Reject</button>
                   </form>
-                  <form action={acceptRequest}>
+                  <form action={acceptRequest} className="flex-1 sm:self-end">
                     <input type="hidden" name="request_id" value={req.id} />
                     <input type="hidden" name="resource_id" value={req.resource_id} />
-                    <button type="submit" className="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700">Accept</button>
+                    <button type="submit" className="w-full h-[34px] px-4 py-1 bg-emerald-600 text-white rounded-md text-sm font-medium hover:bg-emerald-700">Accept</button>
                   </form>
                 </div>
               </div>

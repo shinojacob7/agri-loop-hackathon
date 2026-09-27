@@ -87,14 +87,31 @@ export default async function FarmerDashboard() {
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">Your Recent Requests</h2>
           <div className="space-y-4">
-            {activeRequests.length > 0 ? activeRequests.map((req: any) => (
+            {requests && requests.length > 0 ? requests.map((req: any) => (
               <div key={req.id} className="border border-gray-100 rounded-lg p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full font-medium">Pending</span>
-                    <p className="font-semibold text-gray-900">{req.resources?.title || 'Resource'}</p>
+                    {req.status === 'pending' && (
+                      <span className="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full font-medium">Pending</span>
+                    )}
+                    {req.status === 'accepted' && (
+                      <span className="bg-emerald-100 text-emerald-800 text-xs px-2 py-1 rounded-full font-medium">Accepted</span>
+                    )}
+                    {req.status === 'rejected' && (
+                      <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">Declined</span>
+                    )}
+                    <p className="font-semibold text-gray-900">{req.resources?.title || req.resources?.resource_type || 'Resource'}</p>
                   </div>
-                  <p className="text-sm text-gray-600">Waiting for provider approval</p>
+                  <p className="text-sm text-gray-600">
+                    {req.status === 'pending' ? 'Waiting for provider approval' : 
+                     req.status === 'accepted' ? 'Ready for pickup!' : 
+                     'The provider declined this request.'}
+                  </p>
+                  {req.status === 'rejected' && req.message && req.message.includes('[Provider declined]') && (
+                    <div className="mt-2 text-sm text-red-600 bg-red-50 p-2 rounded-md">
+                      {req.message.split('\n\n').pop()}
+                    </div>
+                  )}
                 </div>
               </div>
             )) : (

@@ -69,7 +69,10 @@ export default async function FarmerRequestsPage() {
                   )}
                   {req.status === 'rejected' && (
                     <div className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
-                      The provider declined this request.
+                      <p className="font-medium">The provider declined this request.</p>
+                      {req.message && req.message.includes('[Provider declined]') && (
+                        <p className="mt-1 opacity-90">{req.message.split('\n\n').pop()}</p>
+                      )}
                     </div>
                   )}
                 </div>
